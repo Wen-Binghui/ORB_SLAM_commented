@@ -385,13 +385,14 @@ int ORBmatcher::WindowSearch(Frame& F1, Frame& F2, int windowSize,
     for (int i = 0; i < HISTO_LENGTH; i++) rotHist[i].reserve(500);
     const float factor = 1.0f / HISTO_LENGTH;
 
-    const bool bMinLevel = minScaleLevel > 0;
+    const bool bMinLevel = minScaleLevel > 0;  // 合法 minScaleLevel
     const bool bMaxLevel = maxScaleLevel < INT_MAX;
 
+    //: 遍历 F1 每一个 mvpMapPoints
     for (size_t i1 = 0, iend1 = F1.mvpMapPoints.size(); i1 < iend1; i1++) {
         MapPoint* pMP1 = F1.mvpMapPoints[i1];
 
-        if (!pMP1) continue;
+        if (!pMP1) continue;  // 在map上没有
         if (pMP1->isBad()) continue;
 
         const cv::KeyPoint& kp1 = F1.mvKeysUn[i1];
@@ -403,6 +404,7 @@ int ORBmatcher::WindowSearch(Frame& F1, Frame& F2, int windowSize,
         if (bMaxLevel)
             if (level1 > maxScaleLevel) continue;
 
+        //: F2 中 kp1.pt 附近的 特征点
         vector<size_t> vIndices2 = F2.GetFeaturesInArea(
             kp1.pt.x, kp1.pt.y, windowSize, level1, level1);
 

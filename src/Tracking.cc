@@ -504,8 +504,8 @@ bool Tracking::TrackPreviousFrame() {
     mLastFrame.mTcw.copyTo(mCurrentFrame.mTcw);
     mCurrentFrame.mvpMapPoints = vpMapPointMatches;
 
-    // If enough correspondeces, optimize pose and project points from previous
-    // frame to search more correspondences
+    //: If enough correspondeces, optimize pose and project points from previous
+    //: frame to search more correspondences
     if (nmatches >= 10) {
         // Optimize pose with correspondences
         Optimizer::PoseOptimization(&mCurrentFrame);
