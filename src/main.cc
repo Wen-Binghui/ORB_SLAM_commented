@@ -1,22 +1,23 @@
 /**
-* This file is part of ORB-SLAM.
-*
-* Copyright (C) 2014 Raúl Mur-Artal <raulmur at unizar dot es> (University of Zaragoza)
-* For more information see <http://webdiis.unizar.es/~raulmur/orbslam/>
-*
-* ORB-SLAM is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* ORB-SLAM is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with ORB-SLAM. If not, see <http://www.gnu.org/licenses/>.
-*/
+ * This file is part of ORB-SLAM.
+ *
+ * Copyright (C) 2014 Raúl Mur-Artal <raulmur at unizar dot es> (University of
+ * Zaragoza) For more information see
+ * <http://webdiis.unizar.es/~raulmur/orbslam/>
+ *
+ * ORB-SLAM is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * ORB-SLAM is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with ORB-SLAM. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <iostream>
 #include <fstream>
@@ -39,84 +40,88 @@
 
 using namespace std;
 
-int main(int argc, char **argv)
-{
+int main(int argc, char** argv) {
     ros::init(argc, argv, "ORB_SLAM");
     ros::start();
 
     cout << endl
          << "ORB-SLAM Copyright (C) 2014 Raul Mur-Artal" << endl
          << "This program comes with ABSOLUTELY NO WARRANTY;" << endl
-         << "This is free software, and you are welcome to redistribute it" << endl
+         << "This is free software, and you are welcome to redistribute it"
+         << endl
          << "under certain conditions. See LICENSE.txt." << endl;
 
-    if (argc != 3)
-    {
+    if (argc != 3) {
         cerr << endl
-             << "Usage: rosrun ORB_SLAM ORB_SLAM path_to_vocabulary path_to_settings (absolute or relative to package directory)" << endl;
+             << "Usage: rosrun ORB_SLAM ORB_SLAM path_to_vocabulary "
+                "path_to_settings (absolute or relative to package directory)"
+             << endl;
         ros::shutdown();
         return 1;
     }
 
     // Load Settings and Check
     string strSettingsFile = ros::package::getPath("ORB_SLAM") + "/" + argv[2];
-    // * Load e.g. 'Data/Settings.yaml' (Camera Parameters & ORB Extractor Param)
+    // * Load e.g. 'Data/Settings.yaml' (Camera Parameters & ORB Extractor
+    // Param)
     cv::FileStorage fsSettings(strSettingsFile.c_str(), cv::FileStorage::READ);
-    if (!fsSettings.isOpened())
-    {
-        ROS_ERROR("Wrong path to settings. Path must be absolut or relative to ORB_SLAM package directory.");
+    if (!fsSettings.isOpened()) {
+        ROS_ERROR(
+            "Wrong path to settings. Path must be absolut or relative to "
+            "ORB_SLAM package directory.");
         ros::shutdown();
         return 1;
     }
 
-    //Create Frame Publisher for image_view
+    // Create Frame Publisher for image_view
     ORB_SLAM::FramePublisher FramePub;
 
     string strVocFile = ros::package::getPath("ORB_SLAM") + "/" + argv[1];
-    cout << endl
-         << "Loading ORB Vocabulary. This could take a while." << endl;
+    cout << endl << "Loading ORB Vocabulary. This could take a while." << endl;
 
     ORB_SLAM::ORBVocabulary Vocabulary;
     bool bVocLoad = Vocabulary.loadFromTextFile(strVocFile);
 
-    if (!bVocLoad)
-    {
-        cerr << "Wrong path to vocabulary. Path must be absolut or relative to ORB_SLAM package directory." << endl;
+    if (!bVocLoad) {
+        cerr << "Wrong path to vocabulary. Path must be absolut or relative to "
+                "ORB_SLAM package directory."
+             << endl;
         cerr << "Falied to open at: " << strVocFile << endl;
         ros::shutdown();
         return 1;
     }
 
-    cout << "Vocabulary loaded!" << endl
-         << endl;
+    cout << "Vocabulary loaded!" << endl << endl;
 
-    //Create KeyFrame Database
+    // Create KeyFrame Database
     ORB_SLAM::KeyFrameDatabase Database(Vocabulary);
 
-    //Create the map
+    // Create the map
     ORB_SLAM::Map World;
 
     FramePub.SetMap(&World);
 
-    //Create Map Publisher for Rviz
+    // Create Map Publisher for Rviz
     ORB_SLAM::MapPublisher MapPub(&World);
 
-    //Initialize the Tracking Thread and launch
-    ORB_SLAM::Tracking Tracker(&Vocabulary, &FramePub, &MapPub, &World, strSettingsFile);
+    // Initialize the Tracking Thread and launch
+    ORB_SLAM::Tracking Tracker(&Vocabulary, &FramePub, &MapPub, &World,
+                               strSettingsFile);
     // 创建Tracking线程，并且运行
     boost::thread trackingThread(&ORB_SLAM::Tracking::Run, &Tracker);
 
-    Tracker.SetKeyFrameDatabase(&Database); // 传入 Database
+    Tracker.SetKeyFrameDatabase(&Database);  // 传入 Database
 
-    //Initialize the Local Mapping Thread and launch
+    // Initialize the Local Mapping Thread and launch
     ORB_SLAM::LocalMapping LocalMapper(&World);
-    boost::thread localMappingThread(&ORB_SLAM::LocalMapping::Run, &LocalMapper);
+    boost::thread localMappingThread(&ORB_SLAM::LocalMapping::Run,
+                                     &LocalMapper);
 
-    //Initialize the Loop Closing Thread and launch
+    // Initialize the Loop Closing Thread and launch
     ORB_SLAM::LoopClosing LoopCloser(&World, &Database, &Vocabulary);
     boost::thread loopClosingThread(&ORB_SLAM::LoopClosing::Run, &LoopCloser);
 
-    //Set pointers between threads // 把自己外另两个传入
+    // Set pointers between threads // 把自己外另两个传入
     Tracker.SetLocalMapper(&LocalMapper);
     Tracker.SetLoopClosing(&LoopCloser);
 
@@ -126,15 +131,14 @@ int main(int argc, char **argv)
     LoopCloser.SetTracker(&Tracker);
     LoopCloser.SetLocalMapper(&LocalMapper);
 
-    //This "main" thread will show the current processed frame and publish the map
+    // This "main" thread will show the current processed frame and publish the
+    // map
     float fps = fsSettings["Camera.fps"];
-    if (fps == 0)
-        fps = 30;
+    if (fps == 0) fps = 30;
 
     ros::Rate r(fps);
 
-    while (ros::ok())
-    {
+    while (ros::ok()) {
         FramePub.Refresh();
         MapPub.Refresh();
         Tracker.CheckResetByPublishers();
@@ -144,26 +148,26 @@ int main(int argc, char **argv)
     // Save keyframe poses at the end of the execution
     ofstream f;
 
-    vector<ORB_SLAM::KeyFrame *> vpKFs = World.GetAllKeyFrames();
+    vector<ORB_SLAM::KeyFrame*> vpKFs = World.GetAllKeyFrames();
     sort(vpKFs.begin(), vpKFs.end(), ORB_SLAM::KeyFrame::lId);
 
     cout << endl
          << "Saving Keyframe Trajectory to KeyFrameTrajectory.txt" << endl;
-    string strFile = ros::package::getPath("ORB_SLAM") + "/" + "KeyFrameTrajectory.txt";
+    string strFile =
+        ros::package::getPath("ORB_SLAM") + "/" + "KeyFrameTrajectory.txt";
     f.open(strFile.c_str());
     f << fixed;
 
-    for (size_t i = 0; i < vpKFs.size(); i++)
-    {
-        ORB_SLAM::KeyFrame *pKF = vpKFs[i];
+    for (size_t i = 0; i < vpKFs.size(); i++) {
+        ORB_SLAM::KeyFrame* pKF = vpKFs[i];
 
-        if (pKF->isBad())
-            continue;
+        if (pKF->isBad()) continue;
 
         cv::Mat R = pKF->GetRotation().t();
         vector<float> q = ORB_SLAM::Converter::toQuaternion(R);
         cv::Mat t = pKF->GetCameraCenter();
-        f << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " " << t.at<float>(0) << " " << t.at<float>(1) << " " << t.at<float>(2)
+        f << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " "
+          << t.at<float>(0) << " " << t.at<float>(1) << " " << t.at<float>(2)
           << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
     }
     f.close();

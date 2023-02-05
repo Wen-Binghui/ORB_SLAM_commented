@@ -55,7 +55,7 @@ Tracking::Tracking(ORBVocabulary* pVoc, FramePublisher* pFramePublisher,
       mbForceRelocalisation(false),
       mbMotionModel(false) {
     // Load camera parameters from settings file
-
+    //: 读入相机参数
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
     float fx = fSettings["Camera.fx"];
     float fy = fSettings["Camera.fy"];
@@ -69,6 +69,7 @@ Tracking::Tracking(ORBVocabulary* pVoc, FramePublisher* pFramePublisher,
     K.at<float>(1, 2) = cy;
     K.copyTo(mK);
 
+    //: Distortion Coef 畸变参数
     cv::Mat DistCoef(4, 1, CV_32F);
     DistCoef.at<float>(0) = fSettings["Camera.k1"];
     DistCoef.at<float>(1) = fSettings["Camera.k2"];
@@ -185,6 +186,7 @@ void Tracking::GrabImage(const sensor_msgs::ImageConstPtr& msg) {
 
     ROS_ASSERT(cv_ptr->image.channels() == 3 || cv_ptr->image.channels() == 1);
 
+    //: 转为灰度图
     if (cv_ptr->image.channels() == 3) {
         if (mbRGB)
             cvtColor(cv_ptr->image, im, CV_RGB2GRAY);
